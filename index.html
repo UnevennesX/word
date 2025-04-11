@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Pro v11 - Lógica Word</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <style>
+        /* --- CSS (Same as v4 - No changes needed here) --- */
+        :root{--bg-dark-L1:#1e1e1e;--bg-dark-L2:#2a2a2a;--bg-dark-L3:#3f3f3f;--text-color-primary:#cccccc;--text-color-secondary:#999999;--border-color:#4a4a4a;--accent-color:#4e8cff;--button-hover-bg:#454545;--button-selected-bg:#555555;--button-selected-border:#777777;--error-color:#ff6b6b;--success-color:#6bff8d;--font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:var(--font-family);background-color:var(--bg-dark-L1);color:var(--text-color-primary);font-size:13px;overflow:hidden;height:100vh;display:flex;flex-direction:column;}
+        .app-container{display:flex;flex-direction:column;height:100%;}
+        .ribbon-bar{background-color:var(--bg-dark-L2);padding:8px 15px;border-bottom:1px solid var(--border-color);display:flex;flex-wrap:wrap;gap:12px;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,0.2);}
+        .ribbon-group{display:flex;align-items:center;gap:3px;}
+        .ribbon-separator{width:1px;height:24px;background-color:var(--border-color);margin:0 10px;}
+        .icon-button{background-color:transparent;border:1px solid transparent;color:var(--text-color-primary);padding:5px;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;font-size:15px;transition:background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;position:relative;}
+        .icon-button[title]:hover::after{content:attr(title);position:absolute;top:110%;left:50%;transform:translateX(-50%);background-color:rgba(40,40,40,0.9);color:var(--text-color-primary);padding:4px 8px;border-radius:3px;font-size:11px;white-space:nowrap;z-index:10;pointer-events:none;opacity:0;transition:opacity 0.2s ease 0.1s;}
+        .icon-button[title]:hover:hover::after{opacity:1;}
+        .icon-button:hover:not(:disabled){background-color:var(--button-hover-bg);border-color:var(--border-color);}
+        .icon-button.selected:not(:disabled){background-color:var(--button-selected-bg);border-color:var(--button-selected-border); color: var(--accent-color);} /* Highlight selected */
+        .icon-button:disabled{opacity:0.4;cursor:not-allowed;}
+        .icon-button:disabled:hover{background-color:transparent;border-color:transparent;}
+        .font-select, .font-size-select{background-color:var(--bg-dark-L3);border:1px solid var(--border-color);color:var(--text-color-primary);padding:5px 8px;border-radius:4px;font-size:13px;height:30px;cursor:pointer;transition:border-color 0.15s ease;}
+        .font-select:hover, .font-size-select:hover{border-color:var(--button-selected-border);}
+        .font-select{width:150px;}
+        .font-size-select{width:70px;}
+        .main-content{flex-grow:1;padding:25px;background-color:var(--bg-dark-L1);overflow-y:auto;display:flex;justify-content:center;}
+        .page-container{background-color:var(--bg-dark-L3);width:8.5in;max-width:100%;min-height:11in;padding:1in;box-shadow:0 2px 15px rgba(0,0,0,0.4);border-radius:2px;}
+        .document-area{width:100%;min-height:calc(11in - 2in);background-color:transparent;border:none;outline:none;color:var(--text-color-primary);font-family:'Arial', var(--font-family);font-size:12pt;line-height:1.6;resize:none;padding:0;display:block;text-align:inherit;caret-color:var(--accent-color);white-space:pre-wrap;}
+        .document-area::selection{background-color:var(--accent-color);color:var(--bg-dark-L1);}
+        .status-bar{background-color:var(--bg-dark-L2);padding:5px 15px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border-color);height:30px;font-size:11px;color:var(--text-color-secondary);flex-shrink:0;flex-wrap:wrap;gap:15px;}
+        .status-left, .status-right{display:flex;align-items:center;gap:15px;}
+        .status-right{margin-left:auto;}
+        .status-bar .icon-button{height:24px;min-width:24px;font-size:14px;}
+        .zoom-slider{width:100px;display:flex;align-items:center;}
+        .zoom-slider .slider{width:100%;height:4px;cursor:pointer;appearance:none;background:var(--border-color);border-radius:2px;outline:none;transition:background 0.15s ease;}
+        .zoom-slider .slider:hover{background:var(--text-color-secondary);}
+        .zoom-slider .slider::-webkit-slider-thumb{appearance:none;width:14px;height:14px;background:var(--text-color-primary);border-radius:50%;cursor:pointer;border:1px solid var(--border-color);}
+        .zoom-slider .slider::-moz-range-thumb{width:14px;height:14px;background:var(--text-color-primary);border-radius:50%;cursor:pointer;border:1px solid var(--border-color);}
+        .zoom-percentage{min-width:45px;text-align:center;font-weight:500;}
+        .action-button{background-color:var(--bg-dark-L3);border:1px solid var(--border-color);color:var(--text-color-primary);padding:4px 10px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:11px;height:24px;transition:background-color 0.15s ease, border-color 0.15s ease;}
+        .action-button:hover{background-color:var(--button-hover-bg);border-color:var(--button-selected-border);}
+        .action-button i{font-size:12px;}
+        .status-message{padding:0 5px;border-radius:3px;transition:opacity 0.3s ease;}
+        .status-message.success{color:var(--success-color);}
+        .status-message.error{color:var(--error-color);}
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Ribbon Bar HTML (Same) -->
+        <div class="ribbon-bar">
+             <div class="ribbon-group">
+                 <button class="icon-button" id="undo-button" title="Deshacer (Ctrl+Z)" disabled><i class="fas fa-undo"></i></button>
+                 <button class="icon-button" id="redo-button" title="Rehacer (Ctrl+Y)" disabled><i class="fas fa-redo"></i></button>
+             </div>
+             <div class="ribbon-separator"></div>
+             <div class="ribbon-group font-controls">
+                <select class="font-select" id="font-family-select" title="Fuente">
+                    <option style="font-family: Arial, sans-serif;" value="Arial, sans-serif">Arial</option>
+                    <option style="font-family: 'Times New Roman', serif;" value="'Times New Roman', serif">Times New Roman</option>
+                    <option style="font-family: 'Courier New', monospace;" value="'Courier New', monospace">Courier New</option>
+                    <option style="font-family: Verdana, sans-serif;" value="Verdana, sans-serif">Verdana</option>
+                    <option style="font-family: Georgia, serif;" value="Georgia, serif">Georgia</option>
+                    <option style="font-family: 'Segoe UI', sans-serif;" value="'Segoe UI', sans-serif">Segoe UI</option>
+                </select>
+                <select class="font-size-select" id="font-size-select" title="Tamaño de Fuente">
+                     <option value="10pt">10</option><option value="11pt">11</option><option value="12pt" selected>12</option><option value="14pt">14</option><option value="16pt">16</option><option value="18pt">18</option><option value="24pt">24</option><option value="36pt">36</option>
+                </select>
+                 <button class="icon-button" id="clear-formatting-button" data-action="clear-formatting" title="Borrar Formato"><i class="fas fa-eraser"></i></button>
+             </div>
+             <div class="ribbon-separator"></div>
+              <div class="ribbon-group formatting-controls">
+                <button class="icon-button" id="bold-button" data-format="bold" title="Negrita (Ctrl+B)"><i class="fas fa-bold"></i></button>
+                <button class="icon-button" id="italic-button" data-format="italic" title="Cursiva (Ctrl+I)"><i class="fas fa-italic"></i></button>
+                <button class="icon-button" id="underline-button" data-format="underline" title="Subrayado (Ctrl+U)"><i class="fas fa-underline"></i></button>
+             </div>
+             <div class="ribbon-separator"></div>
+             <div class="ribbon-group indent-controls">
+                 <button class="icon-button" id="outdent-button" data-action="outdent" title="Disminuir Sangría (Shift+Tab)"><i class="fas fa-outdent"></i></button>
+                 <button class="icon-button" id="indent-button" data-action="indent" title="Aumentar Sangría (Tab)"><i class="fas fa-indent"></i></button>
+             </div>
+             <div class="ribbon-separator"></div>
+             <div class="ribbon-group paragraph-controls">
+                 <button class="icon-button" id="align-left-button" data-action="align_left" title="Alinear Izquierda"><i class="fas fa-align-left"></i></button>
+                 <button class="icon-button" id="align-center-button" data-action="align_center" title="Centrar"><i class="fas fa-align-center"></i></button>
+                 <button class="icon-button" id="align-right-button" data-action="align_right" title="Alinear Derecha"><i class="fas fa-align-right"></i></button>
+                 <button class="icon-button" id="align-justify-button" data-action="align_justify" title="Justificar"><i class="fas fa-align-justify"></i></button>
+             </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+             <div class="page-container">
+                <textarea class="document-area" id="document-area" spellcheck="false">Experimenta con la selección de texto y los botones de formato.
+Haz clic en Negrita, Cursiva o Subrayado sin seleccionar texto y empieza a escribir para ver la magia.
+Usa Ctrl+B, Ctrl+I, Ctrl+U como atajos.
+Mueve el cursor para ver cómo se actualizan los botones.</textarea>
+             </div>
+        </main>
+
+        <!-- Status Bar HTML (Same) -->
+         <footer class="status-bar">
+            <div class="status-left"> <span id="word-count">Calculando...</span> <span id="status-message-area"></span> </div>
+            <div class="status-right"> <button class="icon-button" id="zoom-out-button" title="Alejar"><i class="fas fa-minus"></i></button> <div class="zoom-slider"> <input type="range" min="50" max="200" value="100" step="10" class="slider" id="zoom-slider-input"> </div> <button class="icon-button" id="zoom-in-button" title="Acercar"><i class="fas fa-plus"></i></button> <span class="zoom-percentage" id="zoom-percentage-display">100%</span> <button class="action-button" id="save-button" data-action="save"><i class="fas fa-save"></i> Guardar</button> </div>
+        </footer>
+    </div>
+
+    <script>
+        "use strict";
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- DOM Element References ---
+            const documentArea = document.getElementById('document-area');
+            const statusMessageArea = document.getElementById('status-message-area');
+            const wordCountDisplay = document.getElementById('word-count');
+            const fontFamilySelect = document.getElementById('font-family-select');
+            const fontSizeSelect = document.getElementById('font-size-select');
+            const zoomSliderInput = document.getElementById('zoom-slider-input');
+            const zoomPercentageDisplay = document.getElementById('zoom-percentage-display');
+            const zoomInButton = document.getElementById('zoom-in-button');
+            const zoomOutButton = document.getElementById('zoom-out-button');
+            const undoButton = document.getElementById('undo-button');
+            const redoButton = document.getElementById('redo-button');
+            const clearFormattingButton = document.getElementById('clear-formatting-button');
+            const boldButton = document.getElementById('bold-button');
+            const italicButton = document.getElementById('italic-button');
+            const underlineButton = document.getElementById('underline-button');
+            const indentButton = document.getElementById('indent-button');
+            const outdentButton = document.getElementById('outdent-button');
+            const alignLeftButton = document.getElementById('align-left-button');
+            const alignCenterButton = document.getElementById('align-center-button');
+            const alignRightButton = document.getElementById('align-right-button');
+            const alignJustifyButton = document.getElementById('align-justify-button');
+            const saveButton = document.getElementById('save-button');
+
+            // --- State Variables ---
+            let currentStatusTimeout = null;
+            const MAX_HISTORY_SIZE = 50;
+            let history = [];
+            let historyIndex = -1;
+            let isPerformingUndoRedo = false;
+            let inputDebounceTimeout = null;
+            const INPUT_DEBOUNCE_MS = 350; // Slightly faster debounce
+
+            // Style state for upcoming typing when no selection (Word-like)
+            let activeCursorStyles = {
+                bold: false,
+                italic: false,
+                underline: false
+            };
+            // Track if the *last* action was activating a style (to apply on next char)
+            let preparingFormat = false;
+
+            // --- Constants ---
+            const DEFAULT_FONT_FAMILY = 'Arial, sans-serif';
+            const DEFAULT_FONT_SIZE = '12pt';
+            const DEFAULT_ALIGNMENT = 'left';
+            const INDENT_CHAR = '\t'; // Using Tab for indent
+
+            // Formatting Markers
+            const MARKERS = {
+                bold: { start: '**', end: '**', button: boldButton },
+                italic: { start: '*', end: '*', button: italicButton },
+                underline: { start: '__', end: '__', button: underlineButton }
+            };
+
+            // --- Utility Functions ---
+            function showStatusMessage(message, isError = false, duration = 3000) {
+                if (currentStatusTimeout) clearTimeout(currentStatusTimeout);
+                statusMessageArea.textContent = message;
+                statusMessageArea.className = `status-message ${isError ? 'error' : 'success'}`;
+                currentStatusTimeout = setTimeout(() => {
+                    statusMessageArea.textContent = ''; statusMessageArea.className = ''; currentStatusTimeout = null;
+                }, duration);
+            }
+
+            function updateWordCount() {
+                const text = documentArea.value.trim();
+                const words = text.length === 0 ? [] : text.split(/\s+/).filter(Boolean);
+                const wordCount = words.length;
+                wordCountDisplay.textContent = `${wordCount} ${wordCount === 1 ? 'palabra' : 'palabras'}`;
+            }
+
+            function getCurrentStyles() {
+                return {
+                    fontFamily: documentArea.style.fontFamily || DEFAULT_FONT_FAMILY,
+                    fontSize: documentArea.style.fontSize || DEFAULT_FONT_SIZE,
+                    textAlign: documentArea.style.textAlign || DEFAULT_ALIGNMENT,
+                };
+            }
+
+            function applyStylesFromState(styles) {
+                documentArea.style.fontFamily = styles.fontFamily;
+                documentArea.style.fontSize = styles.fontSize;
+                documentArea.style.textAlign = styles.textAlign;
+                fontFamilySelect.value = styles.fontFamily;
+                fontSizeSelect.value = styles.fontSize;
+                updateAlignmentButtons(styles.textAlign);
+            }
+
+            function saveState(forceSave = false) {
+                if (isPerformingUndoRedo) return;
+                const currentState = {
+                    text: documentArea.value,
+                    selectionStart: documentArea.selectionStart,
+                    selectionEnd: documentArea.selectionEnd,
+                    styles: getCurrentStyles(),
+                    activeCursorStyles: { ...activeCursorStyles } // Crucial: Save cursor style state too
+                };
+
+                // Prevent saving identical states consecutively unless forced
+                if (!forceSave && historyIndex >= 0) {
+                    const lastState = history[historyIndex];
+                    if (lastState.text === currentState.text &&
+                        lastState.selectionStart === currentState.selectionStart &&
+                        lastState.selectionEnd === currentState.selectionEnd &&
+                        JSON.stringify(lastState.styles) === JSON.stringify(currentState.styles) &&
+                        JSON.stringify(lastState.activeCursorStyles) === JSON.stringify(currentState.activeCursorStyles))
+                    {
+                        return; // State hasn't changed meaningfully
+                    }
+                }
+
+                // Truncate history if we undid and then made a new change
+                if (historyIndex < history.length - 1) {
+                    history = history.slice(0, historyIndex + 1);
+                }
+
+                history.push(currentState);
+                historyIndex++;
+
+                // Limit history size
+                if (history.length > MAX_HISTORY_SIZE) {
+                    history.shift();
+                    historyIndex--;
+                }
+                updateUndoRedoButtons();
+                // console.log('State Saved:', historyIndex, currentState.activeCursorStyles); // Debug
+            }
+
+            function updateUndoRedoButtons() {
+                undoButton.disabled = historyIndex <= 0;
+                redoButton.disabled = historyIndex >= history.length - 1;
+            }
+
+            function restoreSelection(start, end) {
+                // Use requestAnimationFrame to ensure focus/selection happens after potential DOM updates
+                requestAnimationFrame(() => {
+                    try {
+                        documentArea.focus();
+                        documentArea.setSelectionRange(start, end);
+                        // Update button states AFTER selection is restored
+                        updateFormattingButtonsState();
+                    } catch (e) {
+                        console.error("Error restoring selection:", e);
+                    }
+                });
+            }
+
+            function restoreState(index) {
+                if (index < 0 || index >= history.length) return;
+                isPerformingUndoRedo = true;
+                const stateToRestore = history[index];
+                // console.log('Restoring State:', index, stateToRestore.activeCursorStyles); // Debug
+
+                documentArea.value = stateToRestore.text;
+                applyStylesFromState(stateToRestore.styles);
+                // IMPORTANT: Restore the active cursor styles state
+                activeCursorStyles = { ...stateToRestore.activeCursorStyles };
+
+                // Restore selection which will trigger updateFormattingButtonsState
+                restoreSelection(stateToRestore.selectionStart, stateToRestore.selectionEnd);
+
+                updateWordCount();
+                historyIndex = index;
+                updateUndoRedoButtons();
+
+                // Allow saving state again shortly after undo/redo finishes
+                setTimeout(() => { isPerformingUndoRedo = false; }, 50);
+            }
+
+            function updateAlignmentButtons(alignment) {
+                alignLeftButton.classList.toggle('selected', alignment === 'left');
+                alignCenterButton.classList.toggle('selected', alignment === 'center');
+                alignRightButton.classList.toggle('selected', alignment === 'right');
+                alignJustifyButton.classList.toggle('selected', alignment === 'justify');
+            }
+
+            // --- Core Formatting Logic ---
+
+            /**
+             * Checks if the cursor is currently positioned inside a given format's markers.
+             * @param {string} text The full text content.
+             * @param {number} cursorPos The current cursor position (selectionStart).
+             * @param {object} marker The marker object {start, end}.
+             * @returns {boolean} True if the cursor is inside the markers.
+             */
+            function isCursorInsideMarker(text, cursorPos, marker) {
+                if (cursorPos < marker.start.length || cursorPos > text.length) return false;
+
+                // Basic check: Is text immediately before marker.start and immediately after marker.end?
+                // This requires the cursor to be DIRECTLY between content and marker, like **text|**
+                const textBefore = text.substring(0, cursorPos);
+                const textAfter = text.substring(cursorPos);
+
+                if (textBefore.endsWith(marker.start) && textAfter.startsWith(marker.end)) {
+                     // Edge case: Cursor is between markers with nothing inside, e.g. **|**
+                     // Check if the character *before* the start marker is NOT the end marker of the *same type*
+                     // (to avoid issues like **** where the middle cursor isn't bold)
+                    const charBeforeStart = textBefore.charAt(textBefore.length - marker.start.length - 1);
+                     if (textBefore.length >= marker.start.length + marker.end.length && textBefore.endsWith(marker.start + marker.end)) {
+                          // Looks like ****, treat cursor as outside
+                          return false;
+                     }
+                    return true;
+                }
+
+
+                // More robust check: Find the nearest unclosed opening marker before the cursor
+                // and see if the corresponding closing marker is after the cursor.
+                // This is complex to do reliably without a proper parser.
+                // Let's stick to a slightly improved heuristic:
+                // Check if the sequence just before the cursor ends with the start marker
+                // AND the sequence just after the cursor starts with the end marker.
+
+                 let openIdx = text.lastIndexOf(marker.start, cursorPos - 1);
+                 while(openIdx !== -1) {
+                     // Ensure it's not an escaped marker if we were supporting that
+                     // Ensure it's not part of a larger sequence like ****
+                     let closeIdx = text.indexOf(marker.end, openIdx + marker.start.length);
+                     if (closeIdx !== -1 && cursorPos > openIdx && cursorPos <= closeIdx) {
+                         // Potential match, need to be careful about nesting/overlap without a parser
+                         // Simple check: Is the text between openIdx and cursorPos *only* the marker?
+                          if (text.substring(openIdx, cursorPos) === marker.start && text.substring(cursorPos,closeIdx+marker.end.length).startsWith(marker.end)) {
+                              return true; // Cursor is like **|text** or **text|**
+                          }
+                           if (cursorPos > openIdx + marker.start.length && cursorPos <= closeIdx) {
+                               // Cursor is inside content like **t|ext**
+                               return true;
+                           }
+                     }
+                     // Look for the next potential opening marker before this one
+                     openIdx = text.lastIndexOf(marker.start, openIdx - 1);
+                 }
+
+
+                return false; // Default to not inside
+            }
+
+
+            /**
+             * Updates the visual state (selected class) of B/I/U buttons based on
+             * the current selection or cursor position. Also updates internal activeCursorStyles.
+             */
+            function updateFormattingButtonsState() {
+                const start = documentArea.selectionStart;
+                const end = documentArea.selectionEnd;
+                const content = documentArea.value;
+                const hasSelection = start !== end;
+
+                // Reset temporary flag
+                // preparingFormat = false; // Moved reset to input/keydown handlers
+
+                if (hasSelection) {
+                    // --- Selection Exists ---
+                    const selectedText = content.substring(start, end);
+                    for (const format in MARKERS) {
+                        const marker = MARKERS[format];
+                        const button = marker.button;
+                        // Check if the *entire* selection is wrapped by the markers
+                        const isSelected = selectedText.startsWith(marker.start) && selectedText.endsWith(marker.end);
+                        button.classList.toggle('selected', isSelected);
+                        // Update active cursor styles based on selection (less relevant here, but for consistency)
+                        activeCursorStyles[format] = isSelected;
+                    }
+                } else {
+                    // --- No Selection (Cursor Position) ---
+                    let cursorIsInsideAnyFormat = false;
+                    for (const format in MARKERS) {
+                        const marker = MARKERS[format];
+                        const button = marker.button;
+                        const isInside = isCursorInsideMarker(content, start, marker);
+                        button.classList.toggle('selected', isInside || activeCursorStyles[format]); // Button active if inside OR if style was just clicked
+
+                        // If cursor IS inside, that takes precedence over a potentially lingering activeCursorStyle
+                        // Example: User clicks B, types, moves cursor out, then back in. Button should reflect 'inside'.
+                         if (isInside) {
+                            activeCursorStyles[format] = true; // Reflect the reality of the cursor position
+                            cursorIsInsideAnyFormat = true;
+                        } else {
+                            // If not inside, keep the active style ONLY if it was explicitly set by the user
+                            // (activeCursorStyles[format] might already be true/false)
+                            // No change needed here based *only* on cursor position if not inside
+                            // Button state was already set above based on combined check.
+                        }
+                    }
+
+                    // If cursor moved and is NOT inside any format, and we weren't just preparing a format,
+                    // ensure active styles are off unless explicitly toggled.
+                     // This logic is tricky. Let's simplify: Button state is driven by `isInside || activeCursorStyles[format]`
+                     // and `activeCursorStyles` is managed by clicks and typing.
+                }
+                // console.log("Updated Buttons/Styles:", JSON.stringify(activeCursorStyles)); // Debug
+            }
+
+            /**
+             * Toggles formatting around the selected text using markers.
+             * @param {string} format 'bold', 'italic', or 'underline'
+             */
+            function applyFormatToSelection(format) {
+                const marker = MARKERS[format];
+                if (!marker) return;
+
+                let start = documentArea.selectionStart;
+                let end = documentArea.selectionEnd;
+                if (start === end) return; // Should not happen if called correctly
+
+                let content = documentArea.value;
+                let selectedText = content.substring(start, end);
+                let textBefore = content.substring(0, start);
+                let textAfter = content.substring(end);
+
+                const isAlreadyFormatted = selectedText.startsWith(marker.start) && selectedText.endsWith(marker.end);
+
+                let newSelectedText;
+                let finalStart = start;
+                let finalEnd;
+
+                if (isAlreadyFormatted) { // Remove markers
+                    newSelectedText = selectedText.slice(marker.start.length, selectedText.length - marker.end.length);
+                    finalEnd = start + newSelectedText.length;
+                } else { // Add markers
+                     // Avoid double-wrapping if possible (e.g. selecting **text** and bolding again)
+                     // Basic check: if selection already starts/ends with marker, trim it first? Or just wrap? Let's just wrap for simplicity.
+                     newSelectedText = marker.start + selectedText + marker.end;
+                     finalEnd = start + newSelectedText.length;
+                }
+
+                documentArea.value = textBefore + newSelectedText + textAfter;
+
+                // Debounce saving state slightly after modification
+                clearTimeout(inputDebounceTimeout);
+                inputDebounceTimeout = setTimeout(() => saveState(true), 50); // Force save after explicit format
+
+                updateWordCount();
+                // Restore selection AFTER potential DOM update and state save
+                restoreSelection(finalStart, finalEnd);
+            }
+
+             /**
+              * Handles clicks on B/I/U buttons.
+              * @param {string} format 'bold', 'italic', or 'underline'
+              */
+             function handleFormatButtonClick(format) {
+                 const marker = MARKERS[format];
+                 if (!marker) return;
+
+                 const start = documentArea.selectionStart;
+                 const end = documentArea.selectionEnd;
+                 const content = documentArea.value;
+
+                 if (start !== end) {
+                     // --- Selection Exists ---
+                     applyFormatToSelection(format);
+                 } else {
+                     // --- No Selection (Cursor) ---
+                     const isCurrentlyInside = isCursorInsideMarker(content, start, marker);
+                     const wasActiveStyleSet = activeCursorStyles[format]; // Style intended for next char?
+
+                     if (isCurrentlyInside) {
+                         // Cursor is inside markers (e.g., **word|**). Turn OFF formatting for next typing.
+                         // Move cursor AFTER the closing marker.
+                         let closeMarkerPos = content.indexOf(marker.end, start); // Find first closing marker after cursor
+
+                         // Ensure we found the *correct* closing marker (could be nested)
+                          let openMarkerPos = content.lastIndexOf(marker.start, start -1);
+                          let tempClosePos = content.indexOf(marker.end, openMarkerPos + marker.start.length);
+                          if (tempClosePos !== -1 && start <= tempClosePos) {
+                              closeMarkerPos = tempClosePos;
+                          } else {
+                              // Fallback if logic failed, just move past nearest one
+                              closeMarkerPos = content.indexOf(marker.end, start);
+                          }
+
+
+                         if (closeMarkerPos !== -1) {
+                             const newCursorPos = closeMarkerPos + marker.end.length;
+                             activeCursorStyles[format] = false; // Deactivate style intent
+                             preparingFormat = false;
+                             marker.button.classList.remove('selected'); // Update button immediately
+                             restoreSelection(newCursorPos, newCursorPos); // Move cursor
+                             saveState(true); // Save cursor position change & style intent change
+                         } else {
+                              // Couldn't find closing marker? Deactivate style anyway.
+                              activeCursorStyles[format] = !wasActiveStyleSet; // Toggle intent
+                              preparingFormat = activeCursorStyles[format];
+                              marker.button.classList.toggle('selected', activeCursorStyles[format]);
+                              saveState(true); // Save style intent change
+                         }
+
+                     } else {
+                         // Cursor is NOT inside markers. Toggle the INTENT for the next character.
+                         activeCursorStyles[format] = !wasActiveStyleSet; // Toggle the intent
+                         preparingFormat = activeCursorStyles[format]; // Mark that we are preparing format
+                         marker.button.classList.toggle('selected', activeCursorStyles[format]); // Update button immediately
+                         // DO NOT insert markers here. Wait for typing.
+                         documentArea.focus(); // Keep focus
+                         saveState(true); // Save the change in style intent
+                     }
+                 }
+                 // updateFormattingButtonsState(); // Called by restoreSelection or implicitly by cursor staying put
+             }
+
+
+            /**
+             * Inserts text with the currently active cursor styles applied using markers.
+             * Called from keydown handler.
+             * @param {string} char The character typed by the user.
+             */
+            function insertFormattedChar(char) {
+                const start = documentArea.selectionStart;
+                const end = documentArea.selectionEnd; // Should be same as start if no selection
+                let content = documentArea.value;
+                let textToInsert = char;
+                let finalCursorPos = start;
+
+                let prefix = '';
+                let suffix = '';
+
+                // Apply markers based on active styles
+                if (activeCursorStyles.bold) { prefix += MARKERS.bold.start; suffix = MARKERS.bold.end + suffix; }
+                if (activeCursorStyles.italic) { prefix += MARKERS.italic.start; suffix = MARKERS.italic.end + suffix; }
+                if (activeCursorStyles.underline) { prefix += MARKERS.underline.start; suffix = MARKERS.underline.end + suffix; }
+
+                textToInsert = prefix + char + suffix;
+                finalCursorPos = start + prefix.length + char.length; // Position cursor before closing markers
+
+                // Insert the text
+                documentArea.value = content.substring(0, start) + textToInsert + content.substring(end);
+
+                // --- CRUCIAL: Deactivate the 'preparingFormat' state ---
+                // The format is now IN the text, no longer just an intent for the *next* char.
+                // However, keep activeCursorStyles TRUE so the *next* char continues the format.
+                 preparingFormat = false; // We just applied the prepared format
+
+                // Update state and cursor
+                 clearTimeout(inputDebounceTimeout);
+                 inputDebounceTimeout = setTimeout(() => saveState(true), 50); // Force save shortly after format insertion
+                updateWordCount();
+                restoreSelection(finalCursorPos, finalCursorPos); // Update cursor & button states
+
+                 // Ensure styles remain active for continuous typing
+                 Object.keys(activeCursorStyles).forEach(format => {
+                     if (prefix.includes(MARKERS[format].start)) {
+                         activeCursorStyles[format] = true; // Keep it active
+                         MARKERS[format].button.classList.add('selected'); // Ensure button stays selected
+                     }
+                 });
+            }
+
+            function modifyIndent(increase = true) {
+                const start = documentArea.selectionStart; const end = documentArea.selectionEnd; const originalValue = documentArea.value;
+                let lineStartIndex = start;
+                while (lineStartIndex > 0 && originalValue[lineStartIndex - 1] !== '\n') { lineStartIndex--; }
+                let lineEndIndex = end;
+                if (originalValue[end - 1] === '\n' && start !== end) { lineEndIndex = end -1; } // Adjust if selection ends exactly on a newline
+                // Find the true end of the line containing the selection end
+                let currentLineEnd = end;
+                 while (currentLineEnd < originalValue.length && originalValue[currentLineEnd] !== '\n') {
+                    currentLineEnd++;
+                 }
+                 lineEndIndex = currentLineEnd;
+
+
+                const textBeforeLines = originalValue.substring(0, lineStartIndex);
+                const selectedLinesText = originalValue.substring(lineStartIndex, lineEndIndex);
+                const textAfterLines = originalValue.substring(lineEndIndex);
+
+                const lines = selectedLinesText.split('\n');
+                let changeInLength = 0;
+                let firstLineChange = 0;
+                let selectionIncludesFirstCharOfLine = (start === lineStartIndex || originalValue[start-1] === '\n');
+
+
+                const modifiedLines = lines.map((line, index) => {
+                    let lineChange = 0;
+                    if (increase) {
+                        // Don't indent empty lines unless it's the only line selected maybe?
+                         // Word doesn't indent empty lines generally. Let's skip them.
+                         if(line.trim().length > 0 || lines.length === 1) {
+                            line = INDENT_CHAR + line;
+                            lineChange = INDENT_CHAR.length;
+                         }
+                    } else {
+                        if (line.startsWith(INDENT_CHAR)) {
+                            line = line.substring(INDENT_CHAR.length);
+                            lineChange = -INDENT_CHAR.length;
+                        } else if (line.startsWith("    ")) { // Also handle space indentation
+                            line = line.substring(4);
+                            lineChange = -4;
+                        }
+                    }
+                    if (index === 0) {
+                        firstLineChange = lineChange;
+                    }
+                    changeInLength += lineChange;
+                    return line;
+                });
+
+                const newValue = textBeforeLines + modifiedLines.join('\n') + textAfterLines;
+                documentArea.value = newValue;
+
+                 // Adjust selection:
+                 // If selection started at the beginning of the line, move it by firstLineChange.
+                 // Otherwise, keep its relative position within the line (don't move start).
+                 // End position always moves by the total changeInLength relative to original end.
+                const newStart = selectionIncludesFirstCharOfLine ? Math.max(lineStartIndex, start + firstLineChange) : start;
+                const newEnd = Math.max(newStart, end + changeInLength); // Ensure start <= end
+
+
+                clearTimeout(inputDebounceTimeout);
+                inputDebounceTimeout = setTimeout(() => saveState(true), 50); // Force save after indent
+                updateWordCount();
+                restoreSelection(newStart, newEnd);
+             }
+
+
+            // --- Initial Setup ---
+            applyStylesFromState(getCurrentStyles()); // Apply defaults
+            updateAlignmentButtons(DEFAULT_ALIGNMENT);
+            updateWordCount();
+            saveState(true); // Initial history state
+            updateFormattingButtonsState(); // Initial button check
+             document.addEventListener('selectionchange', () => {
+                 // Avoid updating during undo/redo or programmatic selection changes within functions
+                 if (!isPerformingUndoRedo) {
+                    updateFormattingButtonsState();
+                 }
+            }); // More reliable than mouseup/keyup for cursor position
+
+
+            // --- Event Listeners ---
+
+            // Debounced Input Saving & Word Count
+            documentArea.addEventListener('input', () => {
+                clearTimeout(inputDebounceTimeout);
+                inputDebounceTimeout = setTimeout(() => {
+                    saveState(); // Save normally after typing settles
+                    updateFormattingButtonsState(); // Update buttons after typing stops
+                }, INPUT_DEBOUNCE_MS);
+                updateWordCount(); // Update word count immediately
+                // If typing occurred, and wasn't handled by keydown format injection,
+                // reset the 'preparingFormat' flag.
+                 if (!preparingFormat) { // Check if keydown handled it
+                     // If typing happened without active styles, turn them off
+                     if (!activeCursorStyles.bold && !activeCursorStyles.italic && !activeCursorStyles.underline) {
+                           // No action needed, they are already off.
+                     } else {
+                          // User typed a normal character, potentially breaking out of a format
+                          // updateFormattingButtonsState called on selectionchange will handle this.
+                     }
+                 }
+                // Reset preparing flag after any input that wasn't formatting insertion
+                // preparingFormat = false; // Reset moved to keydown/insertFormattedChar
+            });
+
+            // Font and Size Changes
+            fontFamilySelect.addEventListener('change', (e) => {
+                const start = documentArea.selectionStart, end = documentArea.selectionEnd;
+                documentArea.style.fontFamily = e.target.value;
+                saveState(true); restoreSelection(start, end);
+            });
+            fontSizeSelect.addEventListener('change', (e) => {
+                const start = documentArea.selectionStart, end = documentArea.selectionEnd;
+                documentArea.style.fontSize = e.target.value;
+                saveState(true); restoreSelection(start, end);
+            });
+
+            // Clear Formatting
+            clearFormattingButton.addEventListener('click', () => {
+                const start = documentArea.selectionStart, end = documentArea.selectionEnd;
+                applyStylesFromState({ // Reset styles
+                    fontFamily: DEFAULT_FONT_FAMILY,
+                    fontSize: DEFAULT_FONT_SIZE,
+                    textAlign: DEFAULT_ALIGNMENT
+                });
+                 activeCursorStyles = { bold: false, italic: false, underline: false }; // Reset cursor styles
+                 preparingFormat = false;
+
+                let selectionLengthAfterClear = end - start; // Default length
+
+                if (start !== end) { // Remove markers from selection
+                    let content = documentArea.value;
+                    let textBefore = content.substring(0, start);
+                    let selectedText = content.substring(start, end);
+                    let textAfter = content.substring(end);
+
+                    // Iteratively remove markers
+                    selectedText = selectedText.replace(/\*\*(.*?)\*\*/gs, '$1');
+                    selectedText = selectedText.replace(/\*(.*?)\*/gs, '$1');
+                    selectedText = selectedText.replace(/__(.*?)__/gs, '$1');
+                     // Could add more marker types here if needed
+
+                    documentArea.value = textBefore + selectedText + textAfter;
+                    selectionLengthAfterClear = selectedText.length; // Update length
+                 } else {
+                      showStatusMessage('Formato del cursor reiniciado', false, 1500);
+                 }
+
+                saveState(true);
+                updateWordCount();
+                showStatusMessage('Formato borrado');
+                restoreSelection(start, start + selectionLengthAfterClear); // Restore selection/cursor pos
+            });
+
+            // B/I/U Button Clicks
+            [boldButton, italicButton, underlineButton].forEach(button => {
+                button.addEventListener('click', () => {
+                    handleFormatButtonClick(button.dataset.format);
+                });
+            });
+
+            // Indentation Buttons
+            indentButton.addEventListener('click', () => modifyIndent(true));
+            outdentButton.addEventListener('click', () => modifyIndent(false));
+
+            // Alignment Buttons
+            [alignLeftButton, alignCenterButton, alignRightButton, alignJustifyButton].forEach(button => {
+                 button.addEventListener('click', () => {
+                    const start = documentArea.selectionStart, end = documentArea.selectionEnd;
+                    const action = button.dataset.action;
+                    let alignment = action.split('_')[1]; // 'left', 'center', 'right', 'justify'
+                    documentArea.style.textAlign = alignment;
+                    updateAlignmentButtons(alignment);
+                    saveState(true);
+                    restoreSelection(start, end);
+                 });
+             });
+
+            // Undo/Redo Clicks
+            undoButton.addEventListener('click', () => restoreState(historyIndex - 1));
+            redoButton.addEventListener('click', () => restoreState(historyIndex + 1));
+
+            // Keyboard Shortcuts and Formatting Injection
+            documentArea.addEventListener('keydown', (e) => {
+                 const start = documentArea.selectionStart;
+                 const end = documentArea.selectionEnd;
+                 let handled = false;
+
+                 // 1. Tab Indentation
+                 if (e.key === 'Tab') {
+                     e.preventDefault();
+                     modifyIndent(!e.shiftKey); // Increase indent if Tab, decrease if Shift+Tab
+                     handled = true;
+                     return; // Stop further processing for Tab
+                 }
+
+                 // 2. Ctrl/Cmd Shortcuts (Undo/Redo/Save/Format)
+                 if (e.ctrlKey || e.metaKey) {
+                     switch (e.key.toLowerCase()) {
+                         case 'z': undoButton.click(); handled = true; break;
+                         case 'y': redoButton.click(); handled = true; break;
+                         case 'b': boldButton.click(); handled = true; break;
+                         case 'i': italicButton.click(); handled = true; break;
+                         case 'u': underlineButton.click(); handled = true; break;
+                         case 's': saveButton.click(); handled = true; break;
+                           // Add more shortcuts if needed (e.g., clear formatting)
+                     }
+                 }
+
+                  // 3. Handle Character Input for Formatting (Word-like behavior)
+                  // Check if it's a printable character, no selection, and a style is active
+                  // Use `e.key.length === 1` as a proxy for printable characters (simplistic)
+                  // Exclude Ctrl/Alt/Meta modifiers for typing intent
+                  if (!handled && !e.ctrlKey && !e.altKey && !e.metaKey && e.key.length === 1 && start === end) {
+                      const hasActiveStyle = activeCursorStyles.bold || activeCursorStyles.italic || activeCursorStyles.underline;
+
+                      if (hasActiveStyle) {
+                          // Prevent default character insertion
+                          e.preventDefault();
+                          // Insert the character wrapped in the active style markers
+                          insertFormattedChar(e.key);
+                          handled = true;
+                      }
+                  }
+
+                 // 4. Arrow Key Navigation - Update buttons based on new cursor position
+                 if (!handled && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) {
+                     // Let the default action happen, selectionchange event will update buttons.
+                     // Reset preparing flag if user moves cursor *before* typing
+                     preparingFormat = false;
+                 }
+
+                  // 5. Backspace/Delete Handling (Basic) - Might need more complex logic
+                  // If backspace removes a marker, update the button state
+                  if (!handled && (e.key === 'Backspace' || e.key === 'Delete')) {
+                      // Let default action occur, selectionchange + subsequent input event check should update state.
+                       // More complex: could check if we are deleting exactly a marker pair.
+                       preparingFormat = false; // Cancel prepared format on delete/backspace
+                  }
+
+
+                 if (handled) {
+                     e.preventDefault(); // Prevent default action if handled
+                 }
+             });
+
+
+            // Zoom event listeners (same)
+            zoomSliderInput.addEventListener('input', (e) => { const zoomValue = e.target.value; zoomPercentageDisplay.textContent = `${zoomValue}%`; documentArea.style.transform = `scale(${zoomValue / 100})`; documentArea.style.transformOrigin = 'top left'; });
+            zoomInButton.addEventListener('click', () => { zoomSliderInput.stepUp(); zoomSliderInput.dispatchEvent(new Event('input')); });
+            zoomOutButton.addEventListener('click', () => { zoomSliderInput.stepDown(); zoomSliderInput.dispatchEvent(new Event('input')); });
+            // Save Button (same)
+            saveButton.addEventListener('click', () => { console.log('--- Simulando Guardado ---'); console.log('Estilos Actuales:', getCurrentStyles()); console.log('Contenido Actual:\n', documentArea.value); /*console.log('Historial:', history);*/ showStatusMessage('Documento guardado (simulado)', false); saveState(true); /* Force save on manual save */ });
+
+            console.log('Editor Pro v11 Inicializado (Lógica Word)');
+        });
+    </script>
+
+</body>
+</html>
