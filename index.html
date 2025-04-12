@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evannescence Word (v14 - Global Src/Table Fix)</title> <!-- Título Actualizado -->
+    <title>Evannescence Word</title> <!-- Título Actualizado -->
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- CSS (Sin cambios respecto a v12/v13) -->
@@ -523,10 +523,24 @@
          if (tablePickerGrid) { tablePickerGrid.addEventListener('mouseover', (e) => { if (e.target.classList.contains('table-picker-cell')) { const targetRow = parseInt(e.target.dataset.row); const targetCol = parseInt(e.target.dataset.col); tablePickerGrid.querySelectorAll('.table-picker-cell').forEach(cell => { const cellRow = parseInt(cell.dataset.row); const cellCol = parseInt(cell.dataset.col); cell.classList.toggle('highlighted', cellRow <= targetRow && cellCol <= targetCol); }); if(tableDimensionDisplay) tableDimensionDisplay.textContent = `${targetRow} × ${targetCol}`; } }); tablePickerGrid.addEventListener('click', (e) => { if (e.target.classList.contains('table-picker-cell') && e.target.classList.contains('highlighted')) { const rows = parseInt(e.target.dataset.row); const cols = parseInt(e.target.dataset.col); insertTableHtml(rows, cols); /* insertTableHtml llama a executeCommand, que captura historial */ hideTablePicker(); } }); tablePickerGrid.addEventListener('mouseout', (e) => { if (tablePickerGrid.contains(e.relatedTarget)) return; if(tableDimensionDisplay) tableDimensionDisplay.textContent = 'Selecciona tamaño'; tablePickerGrid.querySelectorAll('.highlighted').forEach(c => c.classList.remove('highlighted')); }); }
          document.addEventListener('selectionchange', () => { if (!isSourceModeActive && document.activeElement && document.activeElement.classList.contains('document-area')) { const activeEd = document.activeElement; if (activeEd !== currentActiveEditor) { /* No actualizar toolbar si el foco cambia a otro editor */ } else { /* Actualizar si la selección cambia DENTRO del mismo editor */ setTimeout(updateToolbarStates, 50); } } });
 
-         console.log('Evannescence Word (v15 - Undo/Redo History) Initialized');
+         console.log('Funciones principales funcionando correctamente.');
 
      }); // End DOMContentLoaded
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 </body>
 </html>
